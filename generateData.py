@@ -3,7 +3,8 @@ import pandas as pd
 import neurokit2 as nk
 from os import path
 import haversine as hs
-
+import matplotlib.pyplot as plt
+import random
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 import warnings
@@ -205,71 +206,50 @@ def getPeaks(name, id):
 
 
 if __name__ == '__main__':
-    id = 'A5_094593'
-    means = {}
-    path = f'{id}/Simulator'
-    scenarios = [os.path.splitext(filename)[0] for filename in os.listdir(path)]
-    getPeaks(scenarios[0], id)
-    for scenario in scenarios:
-        peak = getPeaks(scenario, id)
-        means[scenario] = (getMeanPhasic(scenario, id), termination(scenario, id), peak[0], peak[1])
-
-    f = open(f'{id}/Figures/research2.txt', "w")
-    f.write('   Name\t\t\t\tPhasic\t\t\t\t\tTonic\t\tAn accident occurred\t  Peak Height Mean\t\tNum of Peaks')
-    f.write(
-        '\n----------------------------------------------------------------------------------------------------------------------')
-
-    print(f'{bcolors.OKBLUE}   Name\t\t\t\tPhasic\t\t\t\t\tTonic\t\tAn accident occurred\t  Peak Height Mean\t\tNum of Peaks{bcolors.ENDC}')
-    print('----------------------------------------------------------------------------------------------------------------------')
-
-    phasic_means = []
-    tonic_means = []
-    peak_means = []
-    peak_nums = []
-    keys = []
-    for y, x in means.items():
-        if x[1] == "Yes":
-            print(f'{bcolors.FAIL}{y} |  {x[0][0]}  |  {x[0][1]} |  \t\t{x[1]}  | \t\t\t {x[2]} |  \t\t {x[3]}{bcolors.ENDC}')
-        else:
-            print(f'{y} |  {x[0][0]}  |  {x[0][1]} |  \t\t{x[1]}  | \t\t\t {x[2]} |  \t\t {x[3]}')
-        f.write(f'\n{y} |  {x[0][0]}  |  {x[0][1]} |  \t\t{x[1]}  | \t\t\t {x[2]} |  \t\t {x[3]}')
-        phasic_means.append(x[0][0])
-        tonic_means.append(x[0][1])
-        peak_means.append(x[2])
-        peak_nums.append(x[3])
-        keys.append(y)
-
-    f.close()
 
     fig, ax = plt.subplots(2, 2)
 
-    ax[0, 0].scatter(phasic_means, keys)
     ax[0, 0].set_title('Phasic Mean Rate')
     ax[0, 0].set_xlabel('Rate')
 
-    ax[1, 0].scatter(peak_means, keys)
     ax[1, 0].set_title('Peak Height Mean Rate')
     ax[1, 0].set_xlabel('Rate')
 
-    ax[0, 1].scatter(tonic_means, keys)
     ax[0, 1].set_title('Tonic Mean Rate')
     ax[0, 1].set_xlabel('Rate')
 
-    ax[1, 1].scatter(peak_nums, keys)
     ax[1, 1].set_title('Number of Peaks')
     ax[1, 1].set_xlabel('Number')
-    ax[1, 1].set_xticks(peak_nums)
 
-    for y, x in means.items():
-        if x[1] == "Yes":
-            ax[0, 0].scatter(x[0][0], y, s=200, c='red', marker='x')
-            ax[0, 1].scatter(x[0][1], y, s=200, c='red', marker='x')
-            ax[1, 0].scatter(x[2], y, s=200, c='red', marker='x')
-            ax[1, 1].scatter(x[3], y, s=200, c='red', marker='x')
+    scenarios = ['A1_030951', 'A1_066685', 'A2_055485', 'A2_085248', 'A2_229691', 'A3_020351', 'A3_038839', 'A4_033712',
+                'A4_039463', 'A5_040547', 'A5_094593', 'A6_089606']
 
-    fig.suptitle(f'EDA Mean Rate for user {id} ', fontsize="x-large")
+    number_of_colors = len(scenarios)
+
+    color = ["#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+             for i in range(number_of_colors)]
+    i = 0
+    for id in scenarios:
+        means = {}
+        path = f'{id}/Simulator'
+        scenarios = [os.path.splitext(filename)[0] for filename in os.listdir(path)]
+        getPeaks(scenarios[0], id)
+        for scenario in scenarios:
+            peak = getPeaks(scenario, id)
+            means[scenario] = (getMeanPhasic(scenario, id), termination(scenario, id), peak[0], peak[1])
+
+        for y, x in means.items():
+            if x[1] == "Yes":
+                ax[0, 0].scatter(x[0][0], y, s=200, c=color[i], marker='o')
+                ax[0, 1].scatter(x[0][1], y, s=200, c=color[i], marker='o')
+                ax[1, 0].scatter(x[2], y, s=200, c=color[i], marker='o')
+                ax[1, 1].scatter(x[3], y, s=200, c=color[i], marker='o')
+        i += 1
+
+    fig.suptitle(f'EDA Mean Rate for users in accident', fontsize="x-large")
     fig.tight_layout()
 
-    plt.savefig(f'{id}/Figures/MeanRate.png')
+    plt.savefig(f'studyResults.png')
 
     plt.show()
+

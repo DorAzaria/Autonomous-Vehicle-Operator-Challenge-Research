@@ -3,29 +3,17 @@ import pandas as pd
 import neurokit2 as nk
 from os import path
 import haversine as hs
-
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 import warnings
-
 warnings.filterwarnings('ignore')
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+def getGSR(name, id,flag):  # load xlsx to gsr df, flag=0 with zero, removes final clock duplication
 
-def getGSR(name, id, flag):  # load xlsx to gsr df, flag=0 with zero, removes final clock duplication
-    df12 = pd.read_csv(os.getcwd() + ('/%s/Physiological/%s.csv' % (id, name)))
+    df12 = pd.read_csv(os.getcwd() +('/%s/Physiological/%s.csv' % (id, name)))
     df12 = df12.rename(columns={'simulation time': 'SimulationTime'})
     df12 = df12.rename(columns={'measurement time': 'measurementTime'})
 
@@ -34,9 +22,8 @@ def getGSR(name, id, flag):  # load xlsx to gsr df, flag=0 with zero, removes fi
     endTime = df12.SimulationTime[dfLastIndex]
     for i in df12.index:
         if df12.SimulationTime[i] == endTime:
-            myLastIndex = i + 11
+            myLastIndex = i+11
             break
-
     newGsr = df12.iloc[0:myLastIndex]
 
     # filter time and gsr
@@ -46,9 +33,8 @@ def getGSR(name, id, flag):  # load xlsx to gsr df, flag=0 with zero, removes fi
     newGsr = newGsr.filter(items=['SimulationTime', 'GSR', 'measurementTime'])
     return newGsr
 
-
 def getLeadCar(name, id):  # load json to gsp df
-    df = pd.read_csv(os.getcwd() + ('/%s/Simulator/%s.csv' % (id, name)))
+    df = pd.read_csv(os.getcwd() +('/%s/Simulator/%s.csv' % (id, name)))
 
     df = (pd.DataFrame(df['Logs'].values.tolist()).join(df.drop('Logs', 1)))
     df = pd.DataFrame.from_dict(df, orient='columns')
@@ -60,7 +46,7 @@ def getLeadCar(name, id):  # load json to gsp df
 
 
 def getGPS(name, id):  # load json to gsp df
-    df = pd.read_csv(os.getcwd() + ('/%s/Simulator/%s.csv' % (id, name)))
+    df = pd.read_csv(os.getcwd() +('/%s/Simulator/%s.csv' % (id, name)))
     df = pd.DataFrame.from_dict(df, orient='columns')
     # filter GPS
     ego1 = df[df.Type == 'GPS'].reset_index()
@@ -92,7 +78,6 @@ def getGPS(name, id):  # load json to gsp df
         mergeEgoAndLead.insert(6, 'DistanceToLeadCar', " ", allow_duplicates=True)
     return mergeEgoAndLead
 
-
 def Tonic(raw_signal):  # get tonic from raw gsr signal
     data = nk.eda_phasic(nk.standardize(raw_signal), sampling_rate=512)
 
@@ -103,14 +88,12 @@ def Phasic(raw_signal):  # get phasic from raw gsr signal
     data = nk.eda_phasic(nk.standardize(raw_signal), sampling_rate=512)
     return data.EDA_Phasic
 
-
 def isNaN(num):
     return num != num
 
-
 def TonicDF(name, id):  # TonicDF return flag=0 if the clock is empty,return tonic+gps
     # tonic
-    gsr = getGSR(name, id, 1)
+    gsr = getGSR(name, id,1)
     gps = getGPS(name, id)
 
     if isNaN(gsr.SimulationTime.mean()):
@@ -126,7 +109,6 @@ def TonicDF(name, id):  # TonicDF return flag=0 if the clock is empty,return ton
     mergeTimeTonic.insert(0, 'Name', name, allow_duplicates=True)
     return mergeTimeTonic, 1
 
-
 def PhasicDF(name, id):  # PhasicDF return flag=0 if the clock is empty
     gsr = getGSR(name, id, 0)
 
@@ -138,16 +120,14 @@ def PhasicDF(name, id):  # PhasicDF return flag=0 if the clock is empty
     arr = pd.DataFrame(columns=['SimulationTime', 'Amplitude', 'RiseTime'])
     for i in range(len(info1['SCR_Peaks'])):
         peakIndex = info1['SCR_Peaks'][i]
-        arr = arr.append(
-            {'SimulationTime': gsr.SimulationTime[peakIndex], 'Amplitude': signals1.SCR_Amplitude[peakIndex],
-             'RiseTime': signals1.SCR_RiseTime[peakIndex]}, ignore_index=True)
+        arr = arr.append({'SimulationTime':gsr.SimulationTime[peakIndex], 'Amplitude':signals1.SCR_Amplitude[peakIndex],'RiseTime':signals1.SCR_RiseTime[peakIndex]}, ignore_index=True)
+        # arr = arr.append({'SimulationTime':gsr.SimulationTime[peakIndex], 'Amplitude':signals1.SCR_Amplitude[peakIndex],'RiseTime':signals1.SCR_RiseTime[peakIndex],'measurementTime':gsr.measurementTime[peakIndex]}, ignore_index=True)
 
     arr = arr[arr.SimulationTime != 0].reset_index()
     arr = arr.filter(items=['SimulationTime', 'Amplitude', 'RiseTime'])
     arr = arr.round({'SimulationTime': 4})
 
-    return arr, 1
-
+    return arr,1
 
 def TonicAndPhasicDF(name, id):  # tonic and phasic df
     dfTonic = TonicDF(name, id)[0]
@@ -157,8 +137,7 @@ def TonicAndPhasicDF(name, id):  # tonic and phasic df
     mergeTimeTonic = pd.merge(dfTonic, dfPhasic, how='outer', on='SimulationTime')
     return mergeTimeTonic
 
-
-def newPhasic(name, id):  # phasic df with simulation info
+def newPhasic(name,id): #phasic df with simulation info
     tonic_phasic = TonicAndPhasicDF(name, id)
     df_phasic_new = pd.DataFrame()
 
@@ -168,108 +147,115 @@ def newPhasic(name, id):  # phasic df with simulation info
             df_phasic_new = df_phasic_new.append(newRow)
     return df_phasic_new
 
+def locationToIndex(df,location):  # get df and location ,return event index
+    minDist = 100
+    minIndex = 0
+    for i in df.index:
+        locationDF = (df.Latitude[i], df.Longitude[i])
+        dist = hs.haversine(location, locationDF)
+        if dist < 0.005:
+            if dist < minDist:
+                minDist = dist
+                minIndex = i
+    return minIndex
 
 def termination(name, id):  # get name and id return if  Reached end point == True
-    df = pd.read_csv(os.getcwd() + ('/%s/Simulator/%s.csv' % (id, name)))
+    df = pd.read_csv(os.getcwd() +('/%s/Simulator/%s.csv' % (id, name)))
     df = pd.DataFrame.from_dict(df, orient='columns')
     gps = df[df.Type == 'Termination'].reset_index()
     gps = gps.filter(items=['Reason'])
     try:
         if gps.Reason[0] == "End of simulation requested. Reason: Reached end point":
-            return "No"
+            return True
         else:
-            return "Yes"
+            return gps.Reason[0]
     except:
-        return "None"
+        return "DataFrame object has no attribute for Termination"
 
 
-def getMeanPhasic(name, id):
+def eventDfTonic(name, id):  # get name and id , return df tonic of events
+    df = TonicDF(name, id)[0]
+    eventDF = pd.DataFrame()
+    termination1 = termination(name, id)
+
+    locExitOrder = (50.061328318333327, 8.679703474044802)
+    locFirstBrake = (50.06123361426605, 8.681690990924837)
+    locSecondBrake = (50.0613214307710, 8.679287731647493)
+
+    index_locFirstBrake = locationToIndex(df, locFirstBrake)
+    index_locExitOrder = locationToIndex(df, locExitOrder)
+    index_locSecondBrake = locationToIndex(df, locSecondBrake)
+
+    newRow1 = df.loc[[index_locFirstBrake]]
+    newRow1.insert(2, 'Event', "FirstBrake", allow_duplicates=True)
+
+    newRow2 = df.loc[[index_locExitOrder]]
+    newRow2.insert(2, 'Event', "ExitOrder", allow_duplicates=True)
+
+    newRow3 = df.loc[[index_locSecondBrake]]
+    newRow3.insert(2, 'Event', "SecondBrake", allow_duplicates=True)
+
+    eventDF = eventDF.append(newRow1)
+    eventDF = eventDF.append(newRow2)
+    eventDF = eventDF.append(newRow3)
+    eventDF.insert(11, 'Completed', termination1, allow_duplicates=True)
+
+    return eventDF
+
+def getParticipantDf_tonic(id): #return all events sum
+    newDf = pd.DataFrame()
+    newDf = newDf.append(eventDfTonic("LOAD1_TTC1", id))
+    newDf = newDf.append(eventDfTonic("LOAD2_TTC1", id))
+    newDf = newDf.append(eventDfTonic("LOAD3_TTC1", id))
+    newDf = newDf.append(eventDfTonic("LOAD1_TTC2", id))
+    newDf = newDf.append(eventDfTonic("LOAD2_TTC2", id))
+    newDf = newDf.append(eventDfTonic("LOAD3_TTC2", id)).reset_index()
+
+    return newDf
+
+def generate(id,name):
+
     dfGSR = getGSR(name, id, 1)
+
     signals, info = nk.eda_process(dfGSR.GSR, sampling_rate=512)
-    return signals['EDA_Phasic'].values.mean(), signals['EDA_Tonic'].values.mean()
+    nk.eda_plot(signals).savefig(f'{id}/Figures/{name}/EDA.png')
 
+    dfGPS = getGPS(name, id)
 
-def getPeaks(name, id):
-    dfGSR = getGSR(name, id, 1)
-    signals, info = nk.eda_process(dfGSR.GSR, sampling_rate=512)
-    peaks = signals['SCR_Peaks']
-    heights = signals['SCR_Height']
-    sum = 0
-    times = 0
-    for i in range(len(peaks)):
-        if peaks[i] == 1:
-            sum += heights[i]
-            times += 1
+    tdDF = TonicAndPhasicDF(name, id)
 
-    return sum / times, times
+    ####################################################
+    x = tdDF.Latitude
+    y = tdDF.Longitude
 
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(x, y, c=tdDF.EDA_Tonic)
+    ax.scatter(50.061483288221794, 8.6767315864563, label="end point")
+    ax.set_title("Tonic")
+    ax.legend()
+    plt.savefig(f'{id}/Figures/{name}/tonic.png')
+
+    ####################################################
+
+    dfPhasic = newPhasic(name, id)
+
+    x = dfPhasic.Latitude
+    y = dfPhasic.Longitude
+    x1 = tdDF.Latitude
+    y1 = tdDF.Longitude
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.scatter(x1, y1, label="Route")
+    ax.scatter(x, y, label="Phasic Peak")
+    ax.scatter(50.061483288221794, 8.6767315864563, label="end point")
+    ax.set_title("Phasic Peaks")
+    ax.legend()
+    plt.savefig(f'{id}/Figures/{name}/phasic.png')
 
 if __name__ == '__main__':
     id = 'A5_094593'
     means = {}
     path = f'{id}/Simulator'
     scenarios = [os.path.splitext(filename)[0] for filename in os.listdir(path)]
-    getPeaks(scenarios[0], id)
     for scenario in scenarios:
-        peak = getPeaks(scenario, id)
-        means[scenario] = (getMeanPhasic(scenario, id), termination(scenario, id), peak[0], peak[1])
-
-    f = open(f'{id}/Figures/research2.txt', "w")
-    f.write('   Name\t\t\t\tPhasic\t\t\t\t\tTonic\t\tAn accident occurred\t  Peak Height Mean\t\tNum of Peaks')
-    f.write(
-        '\n----------------------------------------------------------------------------------------------------------------------')
-
-    print(f'{bcolors.OKBLUE}   Name\t\t\t\tPhasic\t\t\t\t\tTonic\t\tAn accident occurred\t  Peak Height Mean\t\tNum of Peaks{bcolors.ENDC}')
-    print('----------------------------------------------------------------------------------------------------------------------')
-
-    phasic_means = []
-    tonic_means = []
-    peak_means = []
-    peak_nums = []
-    keys = []
-    for y, x in means.items():
-        if x[1] == "Yes":
-            print(f'{bcolors.FAIL}{y} |  {x[0][0]}  |  {x[0][1]} |  \t\t{x[1]}  | \t\t\t {x[2]} |  \t\t {x[3]}{bcolors.ENDC}')
-        else:
-            print(f'{y} |  {x[0][0]}  |  {x[0][1]} |  \t\t{x[1]}  | \t\t\t {x[2]} |  \t\t {x[3]}')
-        f.write(f'\n{y} |  {x[0][0]}  |  {x[0][1]} |  \t\t{x[1]}  | \t\t\t {x[2]} |  \t\t {x[3]}')
-        phasic_means.append(x[0][0])
-        tonic_means.append(x[0][1])
-        peak_means.append(x[2])
-        peak_nums.append(x[3])
-        keys.append(y)
-
-    f.close()
-
-    fig, ax = plt.subplots(2, 2)
-
-    ax[0, 0].scatter(phasic_means, keys)
-    ax[0, 0].set_title('Phasic Mean Rate')
-    ax[0, 0].set_xlabel('Rate')
-
-    ax[1, 0].scatter(peak_means, keys)
-    ax[1, 0].set_title('Peak Height Mean Rate')
-    ax[1, 0].set_xlabel('Rate')
-
-    ax[0, 1].scatter(tonic_means, keys)
-    ax[0, 1].set_title('Tonic Mean Rate')
-    ax[0, 1].set_xlabel('Rate')
-
-    ax[1, 1].scatter(peak_nums, keys)
-    ax[1, 1].set_title('Number of Peaks')
-    ax[1, 1].set_xlabel('Number')
-    ax[1, 1].set_xticks(peak_nums)
-
-    for y, x in means.items():
-        if x[1] == "Yes":
-            ax[0, 0].scatter(x[0][0], y, s=200, c='red', marker='x')
-            ax[0, 1].scatter(x[0][1], y, s=200, c='red', marker='x')
-            ax[1, 0].scatter(x[2], y, s=200, c='red', marker='x')
-            ax[1, 1].scatter(x[3], y, s=200, c='red', marker='x')
-
-    fig.suptitle(f'EDA Mean Rate for user {id} ', fontsize="x-large")
-    fig.tight_layout()
-
-    plt.savefig(f'{id}/Figures/MeanRate.png')
-
-    plt.show()
+        generate(id,scenario)

@@ -29,7 +29,7 @@ def getGSR(name, id,flag):  # load xlsx to gsr df, flag=0 with zero, removes fin
 
     # filter time and gsr
     if flag == 1:
-        newGsr = newGsr[newGsr.SimulationTime != 0].reset_index()
+        newGsr = newGsr[newGsr.SimulationTime != 0].reset_index(drop=True)
 
     newGsr = newGsr.filter(items=['SimulationTime', 'GSR', 'measurementTime'])
     return newGsr
@@ -39,7 +39,7 @@ def getLeadCar(name, id):  # load json to gsp df
 
     df = (pd.DataFrame(df['Logs'].values.tolist()).join(df.drop('Logs', 1)))
     df = pd.DataFrame.from_dict(df, orient='columns')
-    df3 = df[df.Name == 'lead car'].reset_index()
+    df3 = df[df.Name == 'lead car'].reset_index(drop=True)
     df3 = df3.filter(items=['SimulationTime', 'Latitude', 'Longitude'])  # 'Speed', 'PositionInLane', 'LaneNumber'])
     df3 = df3.rename(columns={'Latitude': 'Latitude_lead'})
     df3 = df3.rename(columns={'Longitude': 'Longitude_lead'})
@@ -50,7 +50,7 @@ def getGPS(name, id):  # load json to gsp df
     df = pd.read_csv(os.getcwd() +('/%s/Simulator/%s.csv' % (id, name)))
     df = pd.DataFrame.from_dict(df, orient='columns')
     # filter GPS
-    ego1 = df[df.Type == 'GPS'].reset_index()
+    ego1 = df[df.Type == 'GPS'].reset_index(drop=True)
     ego1["RealTime"] = " "
     for x in ego1.index:
         currentTime = ego1.WorldTime[x]
@@ -103,7 +103,7 @@ def TonicDF(name, id):  # TonicDF return flag=0 if the clock is empty,return ton
 
     tonic = pd.DataFrame(Tonic(gsr.GSR))
     tonic.insert(0, "SimulationTime", gsr.SimulationTime, True)
-    tonic = tonic.groupby('SimulationTime').mean().reset_index()
+    tonic = tonic.groupby('SimulationTime').mean().reset_index(drop=True)
     tonic = tonic.round({'SimulationTime': 4})
     gps = gps.round({'SimulationTime': 4})
     mergeTimeTonic = pd.merge(tonic, gps, how='inner', on='SimulationTime')
@@ -124,7 +124,7 @@ def PhasicDF(name, id):  # PhasicDF return flag=0 if the clock is empty
         arr = arr.append({'SimulationTime':gsr.SimulationTime[peakIndex], 'Amplitude':signals1.SCR_Amplitude[peakIndex],'RiseTime':signals1.SCR_RiseTime[peakIndex]}, ignore_index=True)
         # arr = arr.append({'SimulationTime':gsr.SimulationTime[peakIndex], 'Amplitude':signals1.SCR_Amplitude[peakIndex],'RiseTime':signals1.SCR_RiseTime[peakIndex],'measurementTime':gsr.measurementTime[peakIndex]}, ignore_index=True)
 
-    arr = arr[arr.SimulationTime != 0].reset_index()
+    arr = arr[arr.SimulationTime != 0].reset_index(drop=True)
     arr = arr.filter(items=['SimulationTime', 'Amplitude', 'RiseTime'])
     arr = arr.round({'SimulationTime': 4})
 
@@ -163,7 +163,7 @@ def locationToIndex(df,location):  # get df and location ,return event index
 def termination(name, id):  # get name and id return if  Reached end point == True
     df = pd.read_csv(os.getcwd() +('/%s/Simulator/%s.csv' % (id, name)))
     df = pd.DataFrame.from_dict(df, orient='columns')
-    gps = df[df.Type == 'Termination'].reset_index()
+    gps = df[df.Type == 'Termination'].reset_index(drop=True)
     gps = gps.filter(items=['Reason'])
     try:
         if gps.Reason[0] == "End of simulation requested. Reason: Reached end point":
@@ -210,13 +210,13 @@ def getParticipantDf_tonic(id): #return all events sum
     newDf = newDf.append(eventDfTonic("LOAD3_TTC1", id))
     newDf = newDf.append(eventDfTonic("LOAD1_TTC2", id))
     newDf = newDf.append(eventDfTonic("LOAD2_TTC2", id))
-    newDf = newDf.append(eventDfTonic("LOAD3_TTC2", id)).reset_index()
+    newDf = newDf.append(eventDfTonic("LOAD3_TTC2", id)).reset_index(drop=True)
 
     return newDf
 
 if __name__ == '__main__':
     name = 'LOAD3_TTC2'
-    id = 'A1_030951'
+    id = 'A5_094593'
 
     dfGSR = getGSR(name, id, 1)
 
