@@ -5,7 +5,7 @@ import os
 import json
 from pandas.io.json import json_normalize
 
-id = 'A4_033712'
+id = 'A6_116784'
 print("Making Folders")
 try:
     os.mkdir(id)
@@ -21,7 +21,7 @@ except OSError as error:
 
 # ########### SIMULATOR ##############
 print("Making Simulator files (Engine files)")
-path = f'ACC'
+path = f'convert/ACC'
 scenarios = os.listdir(path)
 
 for x in scenarios:
@@ -47,7 +47,7 @@ for x in scenarios:
    df1.to_csv(f'{id}/Simulator/{x}.csv')
 
 ############# Phy #####################
-path = f'Phy'
+path = f'convert/Phy'
 phy_scenarios = os.listdir(path)
 print("Making Physiological files (Amp)")
 for x in phy_scenarios:
