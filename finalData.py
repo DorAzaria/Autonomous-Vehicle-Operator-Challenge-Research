@@ -247,15 +247,19 @@ if __name__ == '__main__':
 
             for y, x in means.items():
                 if x[1] == "Yes":
-                    ax[0].scatter(x[4], y, s=100, c=color[i], marker='o')
+                    ax[0].scatter(x[4], y, s=100, c='r', marker='o')
                 else:
-                    ax[1].scatter(x[4], y, s=100, c=color[i], marker='o')
+                    if x[4] <= 8000:
+                        ax[0].scatter(x[4], y, s=100, c='b', marker='o')
+
+
+
             i += 1
 
     fig.suptitle(f'Highest Peak Scenarios Comparisons in Accidents or Without  ', fontsize="x-large")
     fig.tight_layout()
 
-    plt.savefig(f'studyResults3.png')
+    plt.savefig(f'studyResults4.png')
 
     plt.show()
 
